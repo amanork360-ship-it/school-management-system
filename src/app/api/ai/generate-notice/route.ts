@@ -10,7 +10,7 @@ interface NoticeResponse {
 }
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || "missing_key",
 });
 
 import { createSupabaseServerClient } from "../../../../lib/supabase-server";
