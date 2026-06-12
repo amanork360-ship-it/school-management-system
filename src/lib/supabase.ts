@@ -100,12 +100,27 @@ export async function dbGetUserProfile(userId: string): Promise<UserProfile | nu
           console.error('Supabase getUser failed:', authErr);
         }
       }
+      const isOwner = user?.email?.toLowerCase() === 'amanork36@gmail.com' || user?.email?.toLowerCase() === 'amanork360@gmail.com';
+      const role = isOwner ? "admin" : (user?.user_metadata?.role || "guest");
+      
       // Build minimal profile regardless of auth fetch success
       return {
         userId: user?.id || "",
         fullName: user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "Unknown User",
-        role: user?.user_metadata?.role || "guest",
-        permissions: [],
+        role: role,
+        permissions: role === "admin" ? [
+          "view_dashboard",
+          "manage_teachers",
+          "manage_students",
+          "manage_classes",
+          "manage_attendance",
+          "manage_finance",
+          "manage_noticeboard",
+          "view_students",
+          "view_classes",
+          "view_attendance",
+          "view_noticeboard"
+        ] : [],
         avatarUrl: user?.user_metadata?.avatar_url,
         classId: undefined
       };
