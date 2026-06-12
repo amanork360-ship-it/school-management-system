@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 interface RequestBody {
@@ -9,8 +9,8 @@ interface NoticeResponse {
   notice: string;
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "missing_key",
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || "missing_key",
 });
 
 import { createSupabaseServerClient } from "../../../../lib/supabase-server";
@@ -44,12 +44,12 @@ Requirements:
 - Include a professional closing statement
 - Format the notice so it is ready to publish`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
+    const responseData = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
     });
 
-    const notice = completion.choices?.[0]?.message?.content?.trim() || "";
+    const notice = responseData.text?.trim() || "";
     if (!notice) {
       return NextResponse.json({ error: "Failed to generate notice" }, { status: 500 });
     }
