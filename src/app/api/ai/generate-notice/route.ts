@@ -13,8 +13,17 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+import { createSupabaseServerClient } from "../../../../lib/supabase-server";
+
 export async function POST(req: Request) {
   try {
+    const supabase = await createSupabaseServerClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized access" }, { status: 401 });
+    }
+
     const { input }: RequestBody = await req.json();
     if (!input?.trim()) {
       return NextResponse.json({ error: "Input cannot be empty" }, { status: 400 });
