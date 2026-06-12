@@ -3,9 +3,13 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GraduationCap, LogIn, Loader2, AlertCircle } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
-// Inner component that uses useSearchParams (must be inside Suspense)
+// Create Supabase client directly here — no dependency on lib/supabase.ts
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,52 +20,46 @@ function LoginForm() {
   const redirectTo = searchParams.get("redirectTo") || "/";
 
   useEffect(() => {
-    // If already logged in, go straight to dashboard
-    const checkSession = async () => {
-      if (!supabase) return;
-      const { data } = await supabase.auth.getSession();
+    // Redirect to dashboard if already logged in
+    supabaseClient.auth.getSession().then(({ data }) => {
       if (data.session) {
-        router.push(redirectTo);
+        window.location.href = redirectTo;
       }
-    };
-    checkSession();
-  }, [router, redirectTo]);
+    });
+  }, [redirectTo]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    if (!supabase) {
-      setError("Authentication service is not configured.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error: signInError } =
+        await supabaseClient.auth.signInWithPassword({ email, password });
 
       if (signInError) {
         setError(signInError.message);
-      } else if (data.session) {
-        router.push(redirectTo);
-        router.refresh();
+        setLoading(false);
+        return;
+      }
+
+      if (data.session) {
+        // Full page reload so the browser sends the fresh auth cookie to the proxy
+        window.location.href = redirectTo;
+      } else {
+        setError("Login succeeded but no session was returned. Please try again.");
+        setLoading(false);
       }
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred during login.");
-    } finally {
+      setError(err?.message ?? "Unexpected error — please try again.");
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/40 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-200/40 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-200/40 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md p-8 bg-white/80 backdrop-blur-xl border border-white rounded-3xl shadow-2xl relative z-10">
         <div className="flex flex-col items-center mb-8">
@@ -75,7 +73,7 @@ function LoginForm() {
         {error && (
           <div className="mb-6 bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-rose-700">{error}</p>
+            <p className="text-sm text-rose-700 break-words">{error}</p>
           </div>
         )}
 
@@ -128,14 +126,15 @@ function LoginForm() {
   );
 }
 
-// Suspense wrapper required by Next.js 16 for useSearchParams
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
