@@ -233,9 +233,11 @@ export default function App() {
   // Protect routes based on role/permissions
   useEffect(() => {
     if (activePage === "finance" && !permissions.includes("manage_finance") && userRole !== "admin") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActivePage("dashboard");
     }
     if (activePage === "teachers" && !permissions.includes("manage_teachers") && userRole !== "admin") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActivePage("dashboard");
     }
   }, [activePage, permissions, userRole]);
