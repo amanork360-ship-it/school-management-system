@@ -32,6 +32,7 @@ import {
   ArrowUpRight,
   FileText,
   Check,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -124,9 +125,12 @@ export default function App() {
     title: "",
     category: "Academic",
     content: "",
-    author: "Oscar Hansen",
+    author: "Admin Office",
     pinned: false,
   });
+
+  const [isGeneratingNotice, setIsGeneratingNotice] = useState<boolean>(false);
+  const [aiPrompt, setAiPrompt] = useState<string>("");
 
   const [newTransactionForm, setNewTransactionForm] = useState({
     type: "Income" as "Income" | "Expense",
@@ -373,6 +377,30 @@ export default function App() {
     setActiveModal(null);
     setNewClassForm({ id: "", grade: "Grade 8", teacherName: "Dr. Sarah Miller", room: "" });
     triggerToast(`Successfully created class ${newClass.id}!`);
+  };
+
+  const handleGenerateNotice = async () => {
+    if (!aiPrompt.trim()) return;
+    setIsGeneratingNotice(true);
+    try {
+      const res = await fetch('/api/ai/generate-notice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: aiPrompt })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate notice");
+      setNewNoticeForm({ 
+        ...newNoticeForm, 
+        content: data.notice, 
+        title: newNoticeForm.title || (aiPrompt.slice(0, 30) + (aiPrompt.length > 30 ? "..." : ""))
+      });
+      triggerToast("AI successfully generated a professional notice!");
+    } catch (err: any) {
+      alert("AI Generation Error: " + err.message);
+    } finally {
+      setIsGeneratingNotice(false);
+    }
   };
 
   const handlePostNoticeSubmit = async (e: React.FormEvent) => {
@@ -1282,6 +1310,18 @@ export default function App() {
 
             {activeModal === "post-notice" && (
               <form onSubmit={handlePostNoticeSubmit} className="space-y-4 text-xs font-semibold text-slate-700">
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-4">
+                  <label className="flex items-center gap-2 mb-2 text-indigo-800 font-bold">
+                    <Sparkles className="w-4 h-4" /> AI Notice Generator
+                  </label>
+                  <div className="flex gap-2">
+                    <input type="text" value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder='e.g. "Parents meeting on Friday at 10am"' className="w-full p-2.5 border border-indigo-200 rounded-lg outline-none focus:border-indigo-400 text-slate-800" />
+                    <button type="button" onClick={handleGenerateNotice} disabled={isGeneratingNotice || !aiPrompt.trim()} className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-lg transition-colors whitespace-nowrap flex items-center gap-2 cursor-pointer">
+                      {isGeneratingNotice ? <Loader2 className="w-4 h-4 animate-spin" /> : "Generate"}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-indigo-500 mt-2">Type a short phrase and let AI write a professional notice.</p>
+                </div>
                 <div>
                   <label className="block mb-1 text-slate-500">Title</label>
                   <input type="text" required value={newNoticeForm.title} onChange={(e) => setNewNoticeForm({...newNoticeForm, title: e.target.value})} placeholder="Notice Title" className="w-full p-2.5 border border-slate-200 rounded-xl outline-none focus:border-indigo-600/30" />
