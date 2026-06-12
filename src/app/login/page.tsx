@@ -1,40 +1,39 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GraduationCap, LogIn, Loader2, AlertCircle } from "lucide-react";
-import { supabase, isSupabaseConfigured } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
 
-export default function LoginPage() {
+// Inner component that uses useSearchParams (must be inside Suspense)
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/";
 
   useEffect(() => {
-    setIsClient(true);
-    // Check if already logged in
+    // If already logged in, go straight to dashboard
     const checkSession = async () => {
-      if (!isSupabaseConfigured() || !supabase) return;
+      if (!supabase) return;
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        router.push("/");
+        router.push(redirectTo);
       }
     };
     checkSession();
-  }, [router]);
+  }, [router, redirectTo]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    if (!isSupabaseConfigured() || !supabase) {
-      setError("Supabase is not configured. Please check your .env.local file.");
+    if (!supabase) {
+      setError("Authentication service is not configured.");
       setLoading(false);
       return;
     }
@@ -58,25 +57,23 @@ export default function LoginPage() {
     }
   };
 
-  if (!isClient) return null; // Avoid hydration mismatch
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
       {/* Decorative background elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-200/40 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-200/40 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="w-full max-w-md p-8 bg-white/80 backdrop-blur-xl border border-white rounded-3xl shadow-2xl relative z-10 animate-fade-in-up">
+      <div className="w-full max-w-md p-8 bg-white/80 backdrop-blur-xl border border-white rounded-3xl shadow-2xl relative z-10">
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-600/30 mb-4">
             <GraduationCap className="w-10 h-10" />
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Schola</h1>
-          <p className="text-sm font-medium text-slate-500 mt-1">Admin & Teacher Portal</p>
+          <p className="text-sm font-medium text-slate-500 mt-1">Admin &amp; Teacher Portal</p>
         </div>
 
         {error && (
-          <div className="mb-6 bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-start gap-3 animate-fade-in">
+          <div className="mb-6 bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{error}</p>
           </div>
@@ -128,5 +125,18 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+// Suspense wrapper required by Next.js 16 for useSearchParams
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
