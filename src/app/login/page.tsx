@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GraduationCap, LogIn, Loader2, AlertCircle } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 
@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || "/";
 
   useEffect(() => {
     setIsClient(true);
@@ -46,7 +48,8 @@ export default function LoginPage() {
       if (signInError) {
         setError(signInError.message);
       } else if (data.session) {
-        router.push("/");
+        router.push(redirectTo);
+        router.refresh();
       }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred during login.");

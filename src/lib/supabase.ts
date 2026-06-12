@@ -10,7 +10,6 @@ export const supabase = supabaseUrl ? createClient(supabaseUrl, supabaseAnonKey)
 // Check if configured
 export function isSupabaseConfigured(): boolean {
   return (
-    typeof window !== 'undefined' &&
     !!supabaseUrl &&
     !!supabaseAnonKey &&
     supabaseUrl !== 'your-supabase-project-url.supabase.co' &&
