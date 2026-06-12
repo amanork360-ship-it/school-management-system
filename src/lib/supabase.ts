@@ -103,21 +103,9 @@ export async function dbGetUserProfile(userId: string): Promise<UserProfile | nu
       // Build minimal profile regardless of auth fetch success
       return {
         userId: user?.id || "",
-        fullName: user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "Admin User",
-        role: user?.user_metadata?.role || "admin",
-        permissions: [
-          "view_dashboard",
-          "manage_teachers",
-          "manage_students",
-          "manage_classes",
-          "manage_attendance",
-          "manage_finance",
-          "manage_noticeboard",
-          "view_students",
-          "view_classes",
-          "view_attendance",
-          "view_noticeboard"
-        ],
+        fullName: user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "Unknown User",
+        role: user?.user_metadata?.role || "guest",
+        permissions: [],
         avatarUrl: user?.user_metadata?.avatar_url,
         classId: undefined
       };

@@ -73,21 +73,9 @@ export default function App() {
   const [financeTransactions, setFinanceTransactions] = useState<typeof initialFinanceTransactions>([]);
   const [notices, setNotices] = useState<typeof initialNotices>([]);
 
-  const [userRole, setUserRole] = useState<string>("admin");
-  const [permissions, setPermissions] = useState<string[]>([
-    "view_dashboard",
-    "manage_teachers",
-    "manage_students",
-    "manage_classes",
-    "manage_attendance",
-    "manage_finance",
-    "manage_noticeboard",
-    "view_students",
-    "view_classes",
-    "view_attendance",
-    "view_noticeboard"
-  ]);
-  const [userName, setUserName] = useState<string>("Oscar Hansen");
+  const [userRole, setUserRole] = useState<string>("guest");
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [userName, setUserName] = useState<string>("Loading...");
 
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false);
