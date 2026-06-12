@@ -1,11 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 import { Teacher, Student, ClassRoom, AttendanceRecord } from '../app/data';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Instantiate client only if URL is provided
-export const supabase = supabaseUrl ? createClient(supabaseUrl, supabaseAnonKey) : null;
+// createBrowserClient stores tokens in COOKIES (not localStorage)
+// so the server-side proxy.ts can read and verify them
+export const supabase = supabaseUrl
+  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Check if configured
 export function isSupabaseConfigured(): boolean {

@@ -1,32 +1,34 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { GraduationCap, LogIn, Loader2, AlertCircle } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
-
-// Create Supabase client directly here — no dependency on lib/supabase.ts
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabaseClient = createClient(supabaseUrl, supabaseKey);
+import { createBrowserClient } from "@supabase/ssr";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") || "/";
 
+  // createBrowserClient stores tokens in COOKIES (not localStorage)
+  // so the server-side proxy.ts can read them
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   useEffect(() => {
-    // Redirect to dashboard if already logged in
-    supabaseClient.auth.getSession().then(({ data }) => {
+    // If already have a valid cookie session, go to dashboard
+    supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         window.location.href = redirectTo;
       }
     });
-  }, [redirectTo]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +37,7 @@ function LoginForm() {
 
     try {
       const { data, error: signInError } =
-        await supabaseClient.auth.signInWithPassword({ email, password });
+        await supabase.auth.signInWithPassword({ email, password });
 
       if (signInError) {
         setError(signInError.message);
@@ -44,10 +46,10 @@ function LoginForm() {
       }
 
       if (data.session) {
-        // Full page reload so the browser sends the fresh auth cookie to the proxy
+        // Full page reload — browser now sends the fresh auth COOKIE to proxy
         window.location.href = redirectTo;
       } else {
-        setError("Login succeeded but no session was returned. Please try again.");
+        setError("No session returned. Please try again.");
         setLoading(false);
       }
     } catch (err: any) {
