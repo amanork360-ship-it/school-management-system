@@ -14,17 +14,23 @@ export default function AINoticeGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("");
 
-  // Fetch current user role to enforce admin access
+  // SECURITY: Always check session — redirect to login if not authenticated
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!isSupabaseConfigured()) return;
-      const { data: { session } } = await supabase!.auth.getSession();
-      if (session?.user?.id) {
-        const profile = await dbGetUserProfile(session.user.id);
-        if (profile) setUserRole(profile.role);
+    const checkAuth = async () => {
+      if (!supabase) {
+        window.location.href = '/login';
+        return;
       }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = '/login';
+        return;
+      }
+      // Fetch role for display purposes
+      const profile = await dbGetUserProfile(session.user.id);
+      if (profile) setUserRole(profile.role);
     };
-    fetchProfile();
+    checkAuth();
   }, []);
 
   const handleGenerate = async () => {

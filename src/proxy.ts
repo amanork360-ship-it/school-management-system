@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
 // Routes that do NOT require authentication
 const PUBLIC_ROUTES = ['/login'];
 
-export async function proxy(request: NextRequest) {
+async function handleRequest(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes through immediately
@@ -62,6 +62,10 @@ export async function proxy(request: NextRequest) {
   // Authenticated → allow the request through
   return response;
 }
+
+// Export as both named "proxy" and default for maximum compatibility
+export { handleRequest as proxy };
+export default handleRequest;
 
 // Run this proxy on all routes except static assets
 export const config = {

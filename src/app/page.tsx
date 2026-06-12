@@ -167,7 +167,20 @@ export default function App() {
     const loadData = async () => {
       setIsLoading(true);
       setDbError(null);
-      
+
+      // SECURITY: Always check session first — redirect to login if not authenticated
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.href = '/login';
+          return;
+        }
+      } else {
+        // Supabase not configured — block access entirely
+        window.location.href = '/login';
+        return;
+      }
+
       if (isSupabaseConfigured()) {
         try {
           if (supabase) {
